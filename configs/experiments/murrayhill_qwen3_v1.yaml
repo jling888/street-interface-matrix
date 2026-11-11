@@ -1,0 +1,9 @@
+# Murray Hill rated with Qwen3-VL-32B, scored with the Street Interface Matrix v1, the previous paper's (Imageability /
+# Identity / Dependence), instead of v2: the same city data and ratings as murrayhill_qwen3_v2, its own
+# outputs/murrayhill_qwen3_v1/. Needs no GPU: run its metric and analysis stages.
+#
+#   python src/main.py configs/experiments/murrayhill_qwen3_v1.yaml metric
+#   python src/main.py configs/experiments/murrayhill_qwen3_v1.yaml analysis
+inherit: murrayhill_qwen3_v2.yaml
+
+metric_system: street_interface_matrix/imageability_identity_dependence   # configs/metric/street_interface_matrix/

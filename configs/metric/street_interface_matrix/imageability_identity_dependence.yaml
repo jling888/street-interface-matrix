@@ -1,0 +1,27 @@
+# A metric system's settings, under `metric`: read by src/metric/street_interface_matrix/. Any metric
+# system's config gives `dimensions` (with their indicators) and `names`, which the analysis reads.
+
+# --- metric (compose_metric): the Street Interface Matrix of the previous paper (paper_revised). M = (Imageability x
+# Identity x Dependence)^(1/3), from the ten earlier terms alone (vlm_prompts.yaml: the earlier terms), no records.
+# Defined as `previous_paper_revised` in the pillar-design comparison (docs/experiment-notes.md, Metric). The ratings
+# are the current prompts' (the earlier terms' prompts were refined since), so this is the earlier design on the same
+# ratings as identity_dependence_comfort.yaml, not the previous paper's numbers.
+metric:
+  # a rating made from two others: 1 + 6 x a / (a + b) on the rating scale (both expected values over rungs 1-7)
+  derived_ratings:
+    nat_built: [v_nat, v_built]   # the greenery ratio V_nat / (V_nat + V_built)
+  names: {imageability: Imageability, identity: Identity, dependence: Dependence}
+  dimensions:
+    imageability:             # eye-level nature (the draft's Place Imageability)
+      - {name: nat_built, ratings: [nat_built]}
+      - {name: gvi_eye, ratings: [gvi_eye]}
+      - {name: gmi, ratings: [gmi]}
+    identity:                 # the draft's Place Identity
+      - {name: v_sign, ratings: [v_sign]}
+      - {name: canyon_openness, ratings: [enclosure], rating_goalposts: [7, 1]}   # 1 - enclosure
+      - {name: gfapi, ratings: [gfapi]}
+    dependence:               # the draft's Place Dependence
+      - {name: v_pave, ratings: [v_pave]}
+      - {name: ias, ratings: [ias]}
+      - {name: business_spill_out, ratings: [business_spill_out]}
+  section_crossing_m: 15      # nodes this close to another street are at a crossing

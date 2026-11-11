@@ -30,7 +30,8 @@ from common.map_style import SLOTS
 from common.node_table import node_review, read_nodes
 from common.settings_and_paths import CONFIG, REPO, Paths, load_config
 
-FILTERS = ["all", "not reviewed yet", "flagged by the pipeline", "user uploads", "excluded by review"]
+FILTERS = ["all", "not reviewed yet", "flagged by the pipeline", "user uploads", "re-probed (panorama off the node)",
+           "excluded by review"]
 
 
 def color(i):
@@ -119,6 +120,8 @@ def main(cfg, paths):
         pick = pick[pick.exclude_reason != ""]
     elif show == "user uploads" and "user_upload" in meta:
         pick = pick[pick.node_id.map(meta.user_upload).fillna(False).astype(bool)]
+    elif show == "re-probed (panorama off the node)" and "probe_shift_m" in meta:   # a user upload swapped for Google's
+        pick = pick[pick.node_id.map(meta.probe_shift_m).fillna(0).ne(0)]
     elif show == "excluded by review":
         pick = pick[pick.node_id.isin(review.index[review.decision == "exclude"])]
     order = pick.node_id.tolist()
