@@ -7,9 +7,9 @@ settings it lists:
     data_prep: murrayhill                 configs/data_prep/murrayhill.yaml (study area, streets, headings)
     inference: qwen3                      configs/inference/qwen3.yaml (models, thresholds)
     public_data: new_york                 configs/public_data/new_york.yaml, and the code in public_data/new_york/
-    metric_system: street_interface_matrix/imageability
-                                          configs/metric/street_interface_matrix/imageability.yaml, and the code
-                                          in metric/street_interface_matrix/
+    metric_system: street_interface_matrix/identity_dependence_comfort
+                                          configs/metric/street_interface_matrix/identity_dependence_comfort.yaml, and
+                                          the code in metric/street_interface_matrix/
     analysis: footfall_and_types          configs/analysis/footfall_and_types.yaml
 A config's sections are named after the files that read them; a config or an experiment may `inherit` another and
 change some of it. With them come configs/inference/segmentation_classes.yaml and vlm_prompts.yaml, checked on load.
@@ -26,7 +26,7 @@ import yaml
 
 REPO = Path(__file__).resolve().parents[2]
 CONFIGS = REPO / "configs"
-CONFIG = CONFIGS / "experiments" / "murrayhill_qwen3.yaml"       # the study
+CONFIG = CONFIGS / "experiments" / "murrayhill_qwen3_v2.yaml"       # the study
 # experiment key -> its configs/ folder
 STAGE_CONFIGS = {"data_prep": "data_prep", "inference": "inference", "public_data": "public_data",
                  "metric_system": "metric", "analysis": "analysis"}

@@ -18,7 +18,7 @@
 #
 #   --step <step>   the GPU step: seg (run_segmentation_models) or vlm (rate_views_with_vlm); every command
 #                   but pack needs one
-#   --exp <run_id>  the experiment, a file in configs/experiments/ (default murrayhill_qwen3)
+#   --exp <run_id>  the experiment, a file in configs/experiments/ (default murrayhill_qwen3_v2)
 #   --gpu <type>    T4, L4, G4, H100 or A100, when `up` starts a session (default L4 for the segmentation, G4 for
 #                   the VLM)
 #   --drive <folder> the Google Drive folder for the archives (default MyDrive/sim)
@@ -68,7 +68,7 @@ if [ -f "$REMEMBERED" ]; then
     esac
   done < "$REMEMBERED"
 fi
-RUN_ID="${RUN_ID:-murrayhill_qwen3}" DRIVE_FOLDER="${DRIVE_FOLDER:-MyDrive/sim}"
+RUN_ID="${RUN_ID:-murrayhill_qwen3_v2}" DRIVE_FOLDER="${DRIVE_FOLDER:-MyDrive/sim}"
 
 SESSION=sim
 case "$STEP" in

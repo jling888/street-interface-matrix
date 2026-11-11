@@ -16,7 +16,7 @@ echo GMAPS_KEY=<your_key> > .env
 
 ## Steps
 
-Run every step of the default experiment (`murrayhill_qwen3`):
+Run every step of the default experiment (`murrayhill_qwen3_v2`):
 ```
 uv run python src/main.py
 ```
@@ -72,7 +72,7 @@ An experiment, `configs/experiments/<run_id>.yaml`, picks one config per stage.
 
 | Stage | Config | Description |
 |---|---|---|
-| `experiments` | `configs/experiments/murrayhill_qwen3.yaml` | The study: name, city, CRS, seed, `osm_date`, and one config per stage |
+| `experiments` | `configs/experiments/murrayhill_qwen3_v2.yaml` | The study: name, city, CRS, seed, `osm_date`, and one config per stage |
 | | `configs/experiments/murrayhill_jev.yaml` | Inherits the study, with `inference: jev` |
 | `data_prep` | `configs/data_prep/murrayhill.yaml` | Study area, street list, typology; nodes every 20 m; four 90-degree frames per node (headings square to the grid); two 180-degree views per node |
 | `inference` | `configs/inference/qwen3.yaml` | Segmentation (variant `mask2former-sam3`: Mask2Former on Mapillary Vistas and ADE20K, and SAM 3; fusion), the VLM (`model_file`, Qwen3-VL-32B, which needs an 80 GB GPU), the pixel shares |
@@ -80,7 +80,7 @@ An experiment, `configs/experiments/<run_id>.yaml`, picks one config per stage.
 | | `configs/inference/segmentation_classes.yaml` | The classes, each model's labels for them, the SAM 3 prompts, the terms |
 | | `configs/inference/vlm_prompts.yaml` | The VLM's 31 terms and prompts, each rated 1-7 |
 | `public_data` | `configs/public_data/new_york.yaml` | Canyon, city-record, Space Syntax (radii 400, 800 and 1,600 m) and footfall measures (radii, rays, ...) |
-| `metric` | `configs/metric/street_interface_matrix/imageability.yaml` | M in Human Development Index form: the indicators between goalposts, three dimensions, their geometric mean |
+| `metric` | `configs/metric/street_interface_matrix/identity_dependence_comfort.yaml` | M in Human Development Index form: the indicators between goalposts, three dimensions, their geometric mean |
 | `analysis` | `configs/analysis/footfall_and_types.yaml` | Validation thresholds, the regression's controls and inference, the clusters (k = 3, Tukey on volume, H/W and integration), the dwell map (s = 0.5, 1, 2; mapped at s = 1) |
 
 A config or experiment may `inherit` another and change part of it. The run id is the experiment file's name: results

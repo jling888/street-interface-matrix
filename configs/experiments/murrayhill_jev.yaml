@@ -5,6 +5,6 @@
 #
 # Needs rating first: there are no JEV ratings with the current prompts (data/murrayhill/inference/vlm/jev/). Rate on
 # a GPU (src/colab.sh <command> --exp murrayhill_jev; docs/colab.md).
-inherit: murrayhill_qwen3.yaml
+inherit: murrayhill_qwen3_v2.yaml
 
 inference: jev           # configs/inference/jev.yaml

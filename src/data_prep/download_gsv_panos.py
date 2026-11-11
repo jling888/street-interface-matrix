@@ -4,7 +4,8 @@
 
 Steps (in this order):
   1. metadata   which panorama serves each node (probe; free), with its capture date, position and photographer, cached
-                in street-view-metadata.csv (metadata); only unanswered nodes are re-asked
+                in street-view-metadata.csv (metadata); only unanswered nodes and user uploads are re-asked. Where
+                the nearest panorama is a user upload, points a few metres along the street are asked for Google's
   2. selection  which nodes to download (select): covered, panorama within max_pano_offset_m of the node; user uploads
                 too (marked user_upload, unusable unless node-review-decisions.csv keeps them). Any capture date is
                 accepted; it is recorded as pano_date. Why a node is not usable (why_not)
@@ -17,6 +18,7 @@ Google caps caching Street View imagery at 30 days: treat data/<city>/data_prep/
 scratch. Run by pipeline step download_street_view (the API key: GMAPS_KEY in .env); stitch_180_views.py
 turns the frames into the 180-degree views (stitch_180_views).
 """
+import math
 import sys
 
 import geopandas as gpd
@@ -32,30 +34,44 @@ from common.downloads import record
 METADATA_URL = "https://maps.googleapis.com/maps/api/streetview/metadata"
 IMAGE_URL = "https://maps.googleapis.com/maps/api/streetview"
 FINAL = {"OK", "ZERO_RESULTS", "NOT_FOUND"}   # metadata answers worth caching; others are re-asked
+SHIFTS_M = (0, 3, -3, 6, -6, 10, -10)        # probe points along the street (m from the node), until Google answers
 
 
 # ---------------------------------------------------------------- 1. metadata
 def probe(nodes, key):
     """!
     @brief Ask Street View which panorama serves each node (metadata requests are free).
-    @param nodes  DataFrame with node_id, lat, lon.
+
+    The nearest panorama can be a user upload (source=outdoor still returns them); then points SHIFTS_M along
+    the street are asked, and the first Google panorama is taken. None found: the node's own answer.
+
+    @param nodes  DataFrame with node_id, lat, lon, heading_fwd_deg.
     @param key    API key.
     @return DataFrame, one row per node: status, pano_id, pano_date (YYYY-MM), copyright
-            ("© Google" for Google's captures, the uploader otherwise), pano and node lat/lon.
+            ("© Google" for Google's captures, the uploader otherwise), pano and node lat/lon, probe_shift_m.
     """
     rows = []
     for r in tqdm(list(nodes.itertuples()), desc="metadata", mininterval=2.0):
-        params = {"location": f"{r.lat},{r.lon}", "source": "outdoor", "key": key}
-        try:
-            js = requests.get(METADATA_URL, params=params, timeout=15).json()
-        except (requests.RequestException, ValueError) as ex:   # network error or a non-JSON reply
-            js = {"status": f"ERROR {ex}"}
+        answers = []
+        for shift in SHIFTS_M:
+            h = math.radians(r.heading_fwd_deg)                 # along the street, metres to degrees
+            lat = r.lat + shift * math.cos(h) / 111320
+            lon = r.lon + shift * math.sin(h) / (111320 * math.cos(math.radians(r.lat)))
+            params = {"location": f"{lat},{lon}", "source": "outdoor", "key": key}
+            try:
+                js = requests.get(METADATA_URL, params=params, timeout=15).json()
+            except (requests.RequestException, ValueError) as ex:   # network error or a non-JSON reply
+                js = {"status": f"ERROR {ex}"}
+            answers.append((shift, js))
+            if "Google" in str(js.get("copyright")):
+                break                                          # Google's panorama; else (upload, error) keep looking
+        shift, js = next((a for a in answers if "Google" in str(a[1].get("copyright"))), answers[0])
         loc = js.get("location") or {}
         rows.append({"node_id": r.node_id, "status": js.get("status"),
                      "pano_id": js.get("pano_id"), "pano_date": js.get("date"),
                      "copyright": js.get("copyright"),
                      "pano_lat": loc.get("lat"), "pano_lon": loc.get("lng"),
-                     "node_lat": r.lat, "node_lon": r.lon})
+                     "node_lat": r.lat, "node_lon": r.lon, "probe_shift_m": shift})
     return pd.DataFrame(rows)
 
 
@@ -74,13 +90,15 @@ def metadata(nodes, key, cached_csv, crs):
     @return DataFrame from probe(), plus pano_offset_m (node to panorama, metres) and user_upload.
     """
     cached = pd.read_csv(cached_csv) if cached_csv.exists() else pd.DataFrame(columns=["node_id", "status"])
-    cached = cached[cached.node_id.isin(nodes.node_id) & cached.status.isin(FINAL)]
+    upload = cached.status.eq("OK") & ~cached.get("copyright", pd.Series(dtype=str)).astype(str).str.contains("Google")
+    cached = cached[cached.node_id.isin(nodes.node_id) & cached.status.isin(FINAL) & ~upload]   # uploads re-asked
     todo = nodes[~nodes.node_id.isin(cached.node_id)]
     print(f"metadata: {len(cached)} cached, {len(todo)} to ask")
 
     meta = pd.concat([cached, probe(todo, key)], ignore_index=True) if len(todo) else cached.reset_index(drop=True)
     meta = meta.drop(columns=[c for c in ("pano_offset_m", "user_upload", "fetch", "downloaded", "reason")
                               if c in meta])                                   # recomputed below
+    meta["probe_shift_m"] = meta.get("probe_shift_m", pd.Series(0.0, index=meta.index)).fillna(0)  # older rows: 0
 
     # distance from node to panorama, in metres
     meta["pano_offset_m"] = float("nan")
@@ -182,8 +200,16 @@ def run(cfg, paths):
     nodes = gpd.read_file(paths.nodes_gpkg)
 
     # 1. which panorama serves each node
+    was = pd.read_csv(paths.pano_metadata_csv) if paths.pano_metadata_csv.exists() else None
     meta = metadata(nodes, key, paths.pano_metadata_csv, int(cfg["projected_crs"]))
     meta.to_csv(paths.pano_metadata_csv, index=False)   # saved before select() can stop the run
+
+    # frames are named by node, not panorama: a node whose panorama changed has its old frames removed
+    if was is not None:
+        old = meta.node_id.map(was.set_index("node_id").pano_id)
+        for n in meta.node_id[old.notna() & old.ne(meta.pano_id)]:
+            for p in paths.raw_photos.glob(f"{n}_[0-9][0-9][0-9].jpg"):
+                p.unlink()
 
     # 2. which nodes to download
     use = select(meta, SP)
@@ -207,4 +233,5 @@ def run(cfg, paths):
     meta.to_csv(paths.pano_metadata_csv, index=False)
     record(paths, "google_street_view", paths.pano_metadata_csv, METADATA_URL)
     record(paths, "google_street_view", paths.raw_photos_csv, IMAGE_URL)
-    print(meta.loc[meta.reason != "", "reason"].str.split(" [(]").str[0].value_counts().to_string())
+    reasons = meta.loc[meta.reason != "", "reason"].str.split(" [(]").str[0].value_counts()
+    print(reasons.to_string() if len(reasons) else "every node usable")

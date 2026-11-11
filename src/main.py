@@ -1,7 +1,7 @@
 """The experiment, stage by stage: data_prep -> inference -> public_data -> metric -> analysis.
 
     python src/main.py                                    # every step of the study
-    (configs/experiments/murrayhill_qwen3.yaml)
+    (configs/experiments/murrayhill_qwen3_v2.yaml)
     python src/main.py inference                          # one stage
     python src/main.py compose_metric                     # one step, by name
     python src/main.py configs/experiments/murrayhill_jev.yaml    # another experiment

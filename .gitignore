@@ -16,6 +16,8 @@ inputs_*.tar.gz
 sim_code.tar.gz
 seg_*.tar.gz
 vlm_*.tar.gz
+seg_*.tar
+vlm_*.tar
 .colab-run
 
 # data/: only the hand-made inputs that start an experiment; the rest (Street View, model outputs, public data) is
@@ -25,5 +27,6 @@ data/**
 !data/*/data_prep/study-area.geojson
 !data/*/data_prep/node-review-decisions.csv
 
-# outputs/: remade by the steps
+# outputs/: remade by the steps. results/ (tracked) keeps each experiment's final scores and figures, copied from
+# outputs/ by hand when they are final
 outputs/

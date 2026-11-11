@@ -91,7 +91,7 @@ reads a relative path from it.
 | Argument | Description | Default |
 |---|---|---|
 | `--step` | `seg` runs `run_segmentation_models`, `vlm` runs `rate_views_with_vlm`. | **Required** except `pack` |
-| `--exp` | The experiment: `configs/experiments/<name>.yaml`. | `murrayhill_qwen3` |
+| `--exp` | The experiment: `configs/experiments/<name>.yaml`. | `murrayhill_qwen3_v2` |
 | `--gpu` | A GPU type the Colab CLI offers (`colab new --help` lists them; availability depends on your Colab subscription), and only `up` reads it. | `L4` for the `seg`, `G4` for the `vlm` |
 | `--drive` | The Google Drive folder for the archives. | `MyDrive/sim` |
 | `-h`, `--help` | Prints the usage. | - |

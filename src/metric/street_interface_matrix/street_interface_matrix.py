@@ -5,9 +5,11 @@
     index_k = (x_k - worst_k) / (best_k - worst_k), clipped to [0, 1]
                   a rating: worst 1, best 7; a record: the config's goalposts, on ln(1 + x) where log: true
     D_d     = 1 + 6 mean[index_k, k in pillar d]             (the dimensions of metric.dimensions)
-    M       = (D_identity D_dependence D_comfort)^(1/3)       the Street Interface Matrix score
+    M       = (D_1 D_2 D_3)^(1/3)                             the Street Interface Matrix score
+The pillars and their indicators are the config's (configs/metric/street_interface_matrix/<design>.yaml).
 
 Steps, in this order:
+  0. derived     metric.derived_ratings, if any: a rating made from two others, 1 + 6 a / (a + b)
   1. terms       each rating's expected value over the seven rungs on the [0, 1] term scale by (EV - 1) / 6 (every
                  rated term, for the tables); a term no side of which could be judged takes its street's mean
   2. indicators  index_<name> per indicator of metric.dimensions: a rating, or a record from the node table (step
@@ -49,6 +51,18 @@ def fill_by_street(d, col):
     """
     if d[col].isna().any():
         d[col] = d[col].fillna(d.groupby("street")[col].transform("mean")).fillna(d[col].mean())
+
+
+# ---------------------------------------------------------------- 0. derived ratings
+def derived(d, C):
+    """!
+    @brief Ratings made from two others (metric.derived_ratings, {name: [a, b]}): <name>_ev = 1 + 6 a / (a + b), on
+           the rating scale from the two expected values (e.g. the greenery ratio V_nat / (V_nat + V_built)).
+    @return d with a <name>_ev column per derived rating.
+    """
+    for name, (a, b) in (C.get("derived_ratings") or {}).items():
+        d[name + "_ev"] = 1 + 6 * d[a + "_ev"] / (d[a + "_ev"] + d[b + "_ev"])
+    return d
 
 
 # ---------------------------------------------------------------- 1. terms
@@ -140,6 +154,7 @@ def compose(d, C):
     @param C  The config's `metric`.
     @return d with the new columns.
     """
+    d = derived(d, C)
     missing = [r + "_ev" for items in C["dimensions"].values() for i in items for r in indicator_ratings(i)
                if r + "_ev" not in d] + [c for c in records_needed(C) if c not in d]
     if missing:
@@ -379,7 +394,7 @@ DICT = {
     "setback_m, storefronts, ... (the records the indicators name)": "step measure_city_records's physical attributes and other node measurements, as the indicators read them",
     "index_<name>": "an indicator scaled between its goalposts on [0, 1] (metric.dimensions)",
     "<dimension>_raw": "a dimension on [0, 1]: the equal-weight mean of its indicators",
-    "identity / dependence / comfort": "the pillars on the 1-7 scale (1 + 6 x)",
+    "<dimension> (e.g. identity / dependence / comfort)": "the pillars on the 1-7 scale (1 + 6 x)",
     "M": "Street Interface Matrix score: the geometric mean of the pillars, on 1-7",
 }
 
