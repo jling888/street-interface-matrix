@@ -1,0 +1,49 @@
+# Public data for New York: what the city's records and geometry say about each node. Read by
+# src/public_data/new_york/ (measure_<what the step measures>.py, one per step), where New York's sources are constants.
+
+# --- street_canyon_geometry (measure_street_canyons): building height H, street width W and H/W per node
+street_canyon_geometry:
+  corridor_m: 35              # buildings within this radius set H (median height)
+  facade_half_m: 40           # width probe reach each side
+  facade_cone_deg: 10         # base angle the open-side test widens from
+  facade_open_test_deg: 25    # wider fan: no wall even here = genuinely open side
+  facade_open_reach_m: 90
+  open_cross_angle_deg: 20    # empty side aimed down a cross street is a crossing, not open
+  open_cross_dist_m: 25
+  hw_band_rays: 9             # parallel rays across one node spacing
+  hw_min_w_m: 4
+  hw_max_w_m: 80
+  hw_fill_radius_m: 28.28     # corner nodes inherit the mean H/W within 20*sqrt(2) m
+  hw_series_max_steps: 3      # ...else the nearest measured node, at most 3 nodes away
+
+# --- city_records_per_node (measure_city_records): land use and seating, then what the city's records say about each
+# node's frontage.
+# Every attribute is also rated by the VLM (the agreement terms); step validate_vlm_ratings compares the two.
+city_records_per_node:
+  radius_m: 20                # trees, storefronts and cultural anchors within this distance of a node: the node spacing
+  fronting_margin_m: 10       # a node's buildings: within half the street's width plus this
+  rays:                       # square to the street, both sides, at these offsets along it
+    offsets_m: [-16, -12, -8, -4, 0, 4, 8, 12, 16]
+    reach_m: 70
+    wall_m: 3.05              # a facade within 10 ft of the sidewalk is street wall (Ewing et al. 2005)
+    max_sidewalk_m: 15        # a longer crossing of a sidewalk polygon runs along a corner, not across a sidewalk
+  land_use:                   # what is on each street: regression controls (fit_footfall_regression)
+    radius_m: 75              # floor area of the lots whose centre is within this distance of a node
+  seating:                    # formal places to sit within radius_m of a node: the node spacing
+    radius_m: 20
+
+# --- space_syntax_network (measure_space_syntax): Space Syntax, regression controls
+space_syntax_network:
+  radius_m: 800               # angular choice and integration, within this many metres along the route
+  extra_radii_m: [400, 1600]  # and at these: choice_<r>, integration_<r>
+  buffer_m: 800               # the graph extends this far beyond the nodes, and at least the largest radius
+  # the street centrelines people can walk: no motorways or road tunnels, and no mapped sidewalks, which would make each
+  # street two parallel paths
+  highways: [primary, primary_link, secondary, secondary_link, tertiary, tertiary_link, residential, unclassified, living_street, pedestrian]
+
+# --- pedestrian_volume_per_node (measure_pedestrian_volume): the outcome, NYCWalks
+pedestrian_volume_per_node:
+  name: NYCWalks
+  fields: [predwkdyAM, predwkdyMD, predwkdyPM]      # the weekday AM, midday and PM estimates, averaged
+  observed_fields: {predwkdyAM: Wkdy_AM_CT, predwkdyMD: Wkdy_MD_CT, predwkdyPM: Wkdy_PM_CT}   # DOT counts, a check
+  radius_m: 25                # segments within this distance of a node (both sidewalks, a corner's crosswalks)

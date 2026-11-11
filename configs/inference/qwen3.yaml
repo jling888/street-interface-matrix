@@ -1,0 +1,35 @@
+# Model inference with Mask2Former + SAM 3 and Qwen3-VL-32B, read by src/inference/: each section by the steps its
+# comment names. vlm.model_file names the sibling in vlm/ that holds the VLM's own code. The classes are in
+# segmentation_classes.yaml, the VLM's terms and prompts in vlm_prompts.yaml, beside this file.
+
+# --- segmentation (run_segmentation_models: the models, once per photo on a GPU; fuse_label_maps: their outputs fused
+# into one class per pixel).
+# Each class's prompts and tiles are in segmentation_classes.yaml
+segmentation:
+  variant: mask2former-sam3   # its outputs' folder: data/<city>/inference/segmentation/<variant>/; another set of
+                              # models or settings gets another name, and both stay side by side
+  models:
+    mapillary_model: facebook/mask2former-swin-large-mapillary-vistas-semantic  # the starting map
+    ade20k_model: facebook/mask2former-swin-large-ade-semantic                  # facade detail
+    sam3_model: facebook/sam3   # finds and masks every match of a text prompt; gated: needs a Hugging Face login
+    save_score_min: 0.12      # the lowest score a detection needs to be saved raw
+  fusion:
+    sam3_min_score: 0.35      # for every class without its own detect.sam3_min_score
+    max_box_share: 0.4        # a detection whose box covers more of the photo than this is dropped
+    street_level_max_height: 0.35  # a detect.street_level detection must reach below the horizon and be at most this tall
+
+# --- vlm (rate_views_with_vlm): the terms and prompts are in vlm_prompts.yaml
+vlm:
+  model_file: qwen3        # vlm/qwen3.py
+  model: Qwen/Qwen3-VL-32B-Instruct
+  cannot_judge_above: 0.5     # a facade side with P(rung 0) above this is left out (a vehicle in the way hides it)
+
+# --- segmentation_pixel_shares (calculate_segmentation_pixel_shares): each term's share by bearing, the eye band and
+# the block faces
+segmentation_pixel_shares:
+  bearing_bins: 360
+  solid_angle_weighting: true  # a pixel counts by the solid angle it covers, not equally
+  eye_band_deg: [-15, 0]      # elevation band of the <term>_eye rows, degrees below the horizon
+  moran_radius_m: 60
+  moran_permutations: 199
+  face_gap_m: 40              # a gap this long along a chain starts a new block face

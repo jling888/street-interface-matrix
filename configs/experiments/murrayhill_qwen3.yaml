@@ -1,0 +1,17 @@
+# The study: Murray Hill, Manhattan (Madison Ave to 1st Ave, E 34th St to E 42nd St), rated with Qwen3-VL-32B and
+# scored with the Street Interface Matrix. The file's name is the run's: outputs/murrayhill_qwen3/.
+name: "Murray Hill, Manhattan"
+city: murrayhill             # data/murrayhill/<stage>/, shared by the experiments of this city
+projected_crs: 32618          # UTM 18N
+seed: 42
+osm_date: "2026-09-01T00:00:00Z"   # Overpass queries see the map as of this date (nodes, network)
+
+# one config per stage (configs/<stage>/<name>.yaml); public_data and metric_system also name their code
+data_prep: murrayhill
+inference: qwen3
+public_data: new_york
+metric_system: street_interface_matrix/imageability
+analysis: footfall_and_types
+
+map_style:
+  scale_bar: feet

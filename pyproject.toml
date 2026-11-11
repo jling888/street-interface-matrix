@@ -1,0 +1,50 @@
+[project]
+name = "street-interface-matrix"
+version = "0.1.0"
+description = "SIM: VLM ratings over two-segmenter street imagery, composed into Place Imageability/Identity/Dependence."
+readme = "README.md"
+authors = [
+    { email = "atelier.j.l@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "geopandas>=1.2.0",
+    "matplotlib>=3.11.2",
+    "networkx>=3.7",
+    "numpy>=2.5.4",
+    "osmnx>=2.1.1",
+    "pandas>=3.1.1",
+    "pillow>=13.0.0",
+    "requests>=2.34.2",
+    "scipy>=1.18.1",
+    "shapely>=2.2.0",
+    "torch>=2.15.0",
+    "tqdm>=4.70.1",
+    "transformers>=5.22.2",
+    "accelerate>=1.15.0",
+    "statsmodels>=0.15.0",
+    "scikit-learn>=1.9.1",
+    "pyyaml>=6.0.3",
+    "python-dotenv>=1.2.4",
+    "contextily>=1.7.1",
+    "streamlit>=1.67.0",
+    "torchvision>=0.29.2",
+    "spreg>=1.9.1",
+    "libpysal>=4.15.1",
+]
+
+[tool.uv]
+package = false             # an experiment, not a library: src/ is the import root, run with python src/main.py
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+filterwarnings = ["ignore::pandas.errors.PerformanceWarning"]
+
+[dependency-groups]
+colab = [
+    "google-colab-cli>=0.7.5",
+]
+dev = [
+    "pytest>=9.2.0",
+]

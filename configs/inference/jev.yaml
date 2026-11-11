@@ -1,0 +1,7 @@
+# The same with JEV-27B-VL instead of Qwen3-VL-32B: the bake-off's winner (docs/experiment-notes.md), kept for a
+# later paper. Same prompts in its decision format (vlm/jev_27b.py).
+inherit: qwen3.yaml
+
+vlm:
+  model_file: jev_27b
+  model: autotrust/JEV-27B-VL

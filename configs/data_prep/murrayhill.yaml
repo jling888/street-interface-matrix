@@ -1,0 +1,31 @@
+# Data preparation for Murray Hill, Manhattan: the study area, its streets and the Street View frames. Read by
+# src/data_prep/ (the section of each file's name); the code is the same for any city.
+
+# --- sample_osm_nodes (sample_street_nodes)
+sample_osm_nodes:
+  polygon: study-area.geojson     # in data/murrayhill/data_prep/ (by hand); corners Madison/E 34th, Madison/E 42nd, 1st/E 42nd, 1st/E 34th
+  polygon_buffer_m: 5         # streets are clipped to the polygon grown by this much
+  # the study's streets; tunnels and the viaduct are left out. Always dropped as well: unnamed ways, tunnels, bridges,
+  # ramps (_link) and ways off street level (a non-zero OSM layer)
+  name_include: "^(Madison Avenue|Park Avenue|Lexington Avenue|3rd Avenue|2nd Avenue|1st Avenue|East 3[4-9]th Street|East 4[0-2](st|nd|rd|th) Street|Tunnel Exit Street|Tunnel Approach Street|Tudor City Place)$"
+  spacing_m: 20               # node spacing along each street
+  min_corridor_m: 60          # drop street pieces shorter than this
+  highway_keep: [motorway, trunk, primary, secondary, tertiary, residential, unclassified]
+  typology:                   # street-name regexes, first match wins
+    avenue_canyon:    "(?:Madison|Park|Lexington)\\s+Ave"
+    avenue_secondary: "(?:3rd|Third|2nd|Second|1st|First)\\s+Ave"
+    mid_block:        "East\\s+(?:3[4-9]|4[0-2])(?:st|nd|rd|th)\\s+St"
+
+# --- download_gsv_panos (download_street_view): the frames
+download_gsv_panos:
+  headings: [29, 119, 209, 299]   # four frames square to the Manhattan grid (avenues 29 deg east of north)
+  fov: 90
+  pitch: 0
+  image_size: 640
+  max_pano_offset_m: 15       # reject a panorama this far from its node
+
+# --- stitch_180_views (stitch_180_views): the 180-degree views stitched from the frames
+stitch_180_views:
+  fov: 180                    # forward view along the walk
+  width: 1280                 # ~7.1 px/degree: the frames' own resolution (640 px / 90 deg)
+  quality: 88

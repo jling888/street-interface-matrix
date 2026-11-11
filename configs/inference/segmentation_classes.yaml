@@ -1,0 +1,136 @@
+# The segmentation classes and the terms: what the method measures. Added by load_config (cfg["classes"], cfg["ignore"],
+# cfg["terms"]). The code reads some of these names directly; common/settings_and_paths.py lists them and checks them
+# on load.
+#
+# classes: the models keep their own labels (run_segmentation_models); this maps them to the classes (fuse_label_maps).
+# Each class names the labels that
+# feed it from each Mask2Former model (mapillary, ade20k) and the prompts SAM 3 searches for it (detect).
+# Read by run_segmentation_models (the detect prompts) and fuse_label_maps (everything); changing a class, its
+# order, a label list, may_replace or a detect threshold needs fuse_label_maps and the steps after it; changing
+# detect.prompts or tiles needs run_segmentation_models (GPU) for those passes only.
+# terms: read by calculate_segmentation_pixel_shares and everything that reads its term shares by bearing.
+
+# The classes, in PRIORITY order: where two classes claim a pixel, the one listed first wins. Every pixel
+# starts with its Mapillary label; ADE20K and detect proposals overwrite it only where that label is in the
+# class's may_replace (default: unknown), so a window can split a facade but never a tree.
+# detect (prompts run by SAM 3 in run_segmentation_models, judged here in fuse_label_maps): tiles = photo regions [x0,
+# y0, x1, y1] searched separately so
+# single windows are big enough to find; min_share_on_replaceable = share of a mask that must lie on
+# may_replace classes, else it is dropped. Window settings: the partner prototype
+# (github.com/konan878-hub/Vision-Model-Segmentation-Taxonomy), set by eye, not tuned on labelled photos.
+# Trees count whole whatever the season (most panoramas are from April): bare crowns stay vegetation / tree.
+classes:
+  sky:
+    mapillary: [Sky]
+    ade20k: [sky]
+  person:
+    mapillary: [Person, Bicyclist, Motorcyclist, Other Rider]
+    ade20k: [person]
+  vehicle:
+    mapillary: [Car, Bus, Truck, Bicycle, Motorcycle, Other Vehicle, Trailer, Caravan, On Rails, Wheeled Slow]
+    ade20k: [car, bus, truck, van, bicycle, minibike]
+  pole:
+    mapillary: [Pole, Utility Pole, Street Light, Traffic Sign Frame]
+    ade20k: [pole, streetlight]
+  sign_signal:
+    mapillary: [Traffic Light, Traffic Sign (Front), Traffic Sign (Back)]
+    ade20k: [traffic light]
+  signboard:
+    mapillary: [Billboard, Banner]
+    ade20k: [signboard, trade name, poster]
+    may_replace: [building, wall, unknown]
+    detect:
+      prompts: [storefront business sign, shop signboard, commercial sign]
+      street_level: true
+  glazing:  # see-through windows; curtain walls stay building
+    ade20k: [windowpane]
+    may_replace: [building, wall]
+    detect:
+      prompts: [apartment building window, building window, residential window, glass window, storefront window]
+      tiles: [[0, 0, 0.6, 0.68], [0.15, 0, 0.85, 0.72], [0.4, 0, 1, 0.7]]
+      max_mask_share: 0.015
+      min_share_on_replaceable: 0.5
+  door:
+    ade20k: [door, screen door]
+    may_replace: [building, wall]
+    detect:
+      prompts: [building entrance door, store entrance door, entrance doorway]
+      street_level: true
+  column:
+    ade20k: [column]
+    may_replace: [building, wall, unknown]
+  stoop:
+    ade20k: [stairs, stairway, step]
+    may_replace: [building, wall, unknown]
+    detect:
+      prompts: [building entrance steps, residential stoop, entrance stairs]
+      street_level: true
+      max_mask_share: 0.03
+  bench:
+    mapillary: [Bench]
+    ade20k: [bench]
+    may_replace: [sidewalk, unknown]
+    detect:
+      prompts: [street bench, outdoor bench]
+      sam3_min_score: 0.5    # at 0.35 SAM 3 also took tree-pit guards, crates and entrance steps (full-run check)
+      street_level: true
+      max_mask_share: 0.02
+  planter:
+    ade20k: [pot]
+    may_replace: [sidewalk, vegetation, unknown]
+    detect:
+      prompts: [street planter, planter box, plant container]
+      street_level: true
+      max_mask_share: 0.02
+  fence:  # no detector: fence feeds no term
+    mapillary: [Fence, Guard Rail, Barrier]
+    ade20k: [fence, railing, bannister]
+    may_replace: [vegetation, wall, unknown]
+  furniture:
+    mapillary: [Trash Can, Fire Hydrant, Mailbox, Phone Booth, Junction Box, Bike Rack, CCTV Camera]
+    ade20k: [ashcan, booth]
+    may_replace: [sidewalk, unknown]
+  hedge:
+    may_replace: [vegetation]
+    detect:
+      prompts: [hedge, trimmed shrub]
+      street_level: true
+  tree:
+    ade20k: [tree, palm]
+    may_replace: [vegetation, unknown]
+  vegetation:  # shrubs, facade greenery, window boxes
+    mapillary: [Vegetation]
+    ade20k: [plant, flower]
+  ground_cover:  # lawns and turf: GVI, not V_nat (paper)
+    mapillary: [Terrain]
+    ade20k: [grass]
+  wall:
+    mapillary: [Wall]
+  tunnel:
+    mapillary: [Tunnel]
+  building:
+    mapillary: [Building, Bridge]
+    ade20k: [building, house, skyscraper, hovel, tower]
+  curb:
+    mapillary: [Curb, Curb Cut]
+  sidewalk:
+    mapillary: [Sidewalk, Pedestrian Area]
+    ade20k: [sidewalk]
+  roadway:
+    mapillary: [Road, Service Lane, Bike Lane, Crosswalk - Plain, Lane Marking - Crosswalk, Lane Marking - General, Parking, Manhole, Catch Basin, Pothole, Rail Track]
+    ade20k: [road]
+ignore: {mapillary: [Car Mount, Ego Vehicle]}   # the capture vehicle: left out of every share
+
+# The terms measured by bearing (calculate_segmentation_pixel_shares): each the union of classes. vegetation / sky /
+# building feed GVI and VEI (calculate_segmentation_pixel_shares) and
+# the arc shares (validate_vlm_ratings's check of the ratings, compose_metric's tables); the V_ terms are the paper's.
+terms:
+  vegetation: [tree, hedge, planter, vegetation, ground_cover]
+  sky:        [sky]
+  building:   [building, wall, glazing, door, column, signboard]
+  V_nat:      [tree, hedge, planter, vegetation]
+  V_built:    [building, wall, glazing, door, column]
+  V_pave:     [sidewalk]
+  openings:   [glazing, door]          # GFAPI: storefront transparency and entryways
+  signage:    [signboard]
+  seating:    [bench, stoop]

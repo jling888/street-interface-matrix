@@ -1,0 +1,29 @@
+# Secrets: never commit
+.env
+
+# Python and macOS
+.venv
+__pycache__/
+*.py[oc]
+.pytest_cache/
+.DS_Store
+
+# Claude Code's worktrees
+.claude/worktrees/
+
+# colab.sh: its archives (the photos; the code), wherever pack runs, and its remembered flags
+inputs_*.tar.gz
+sim_code.tar.gz
+seg_*.tar.gz
+vlm_*.tar.gz
+.colab-run
+
+# data/: only the hand-made inputs that start an experiment; the rest (Street View, model outputs, public data) is
+# remade by the steps or not ours to share
+data/**
+!data/**/
+!data/*/data_prep/study-area.geojson
+!data/*/data_prep/node-review-decisions.csv
+
+# outputs/: remade by the steps
+outputs/

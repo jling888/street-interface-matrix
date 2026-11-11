@@ -1,0 +1,58 @@
+# Analysis: the VLM's ratings checked, and what the metric explains. Read by src/analysis/ (the section
+# of each file's name); the code is the same for any city and any metric system.
+
+# --- vlm_rating_validation (validate_vlm_ratings): the ratings against the label maps, the canyons and the records
+vlm_rating_validation:
+  hw_bands: [0, 0.5, 0.75, 1, 1.5, 2, 3, 5, 10]   # H/W bands for the mean enclosure rating
+  hw_split: 1                 # rank agreement below and above this H/W
+  storey_m: 3.5               # the enclosure rating by building height, in storeys of this height
+  storey_bands: [0, 4, 6, 10, 15, 20, 30, 100]
+  wall_classes: [building, glazing, door, wall, column]   # the walls of the segmented green-to-walls ratio
+  # a rating -> the record it reads (step measure_city_records's columns) and the sign expected. Each pair's role is
+  # suggested by the
+  # thresholds below; the metric (compose_metric) takes whichever its config names. The thresholds are starting points
+  # (no benchmark).
+  agreement:
+    setback_space: {record: setback_m, sign: 1}
+    sidewalk_width: {record: sidewalk_width_m, sign: 1}
+    street_wall_continuity: {record: street_wall_share, sign: 1}
+    building_grain: {record: buildings_fronting, sign: 1}
+    enclosure: {record: H_m, sign: 1}
+    historic_character: {record: median_building_year, sign: -1}
+    v_nat: {record: GVI, sign: 1}
+    street_trees: {record: street_tree_count, sign: 1}
+    public_seating: {record: seating_public, sign: 1}
+    cafe_seating: {record: seating_cafes, sign: 1}
+    shopfronts: {record: storefronts, sign: 1}
+    vacant_shopfronts: {record: vacant_storefront_share, sign: 1}
+    open_space: {record: open_space_distance_m, sign: -1}
+    cultural_anchors: {record: cultural_anchor_count, sign: 1}
+    transit_entrance: {record: subway_distance_m, sign: -1}
+    v_pave: {record: active_sidewalk_shed, sign: -1}
+  max_modal_share: 0.7        # a usable rating puts at most this share of views on one rung
+  min_repeatability: 0.5      # and correlates at least this much with the next view along the walk
+  min_beyond_record: 0.2      # repeatability minus rho squared: the perceived part the record misses
+
+# --- footfall_regression (fit_footfall_regression): the outcome (step measure_pedestrian_volume) on the dimensions,
+# with network and land-use controls
+footfall_regression:
+  controls: [choice, integration, choice_400, integration_400, choice_1600, integration_1600]
+  land_use_controls: [retail_share, office_share, land_use_mix, subway_distance_m]
+  wild_bootstrap: 999         # wild cluster bootstrap draws (by block face)
+  spatial_k: 8                # neighbours in the spatial models' weights
+  conley_cutoff_m: 200        # Conley standard errors: residuals of views within this distance may correlate
+  moran_permutations: 199
+
+# --- street_type_clusters (cluster_street_types): k-means on the three dimensions
+street_type_clusters:
+  k: 3
+  bootstrap: 50               # refits on random 80% samples, for the types' stability (adjusted Rand index)
+  tukey_on: [ln_volume, HW_effective, integration]   # measures independent of the clustering
+  tukey_alpha: 0.01
+
+# --- dwell_potential_map (map_dwell_potential): lingering = footfall x (M / 7)^s, a prediction
+dwell_potential_map:
+  lingering_exponents: [0.5, 1, 2]   # s: no lingering data to estimate it, so L is given at each; the map is s = 1
+  bandwidth_m: 50             # Gaussian kernel
+  cell_m: 10
+  mask_m: 20                  # cells farther than this from every node are left out

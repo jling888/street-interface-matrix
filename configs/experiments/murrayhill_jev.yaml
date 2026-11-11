@@ -1,0 +1,10 @@
+# Murray Hill rated with JEV-27B-VL instead of Qwen3-VL-32B: the bake-off's winner (docs/experiment-notes.md), kept for a
+# later paper, not this one. Same city data, same prompts in its decision format; its own outputs/murrayhill_jev/.
+#
+#   python src/main.py configs/experiments/murrayhill_jev.yaml
+#
+# Needs rating first: there are no JEV ratings with the current prompts (data/murrayhill/inference/vlm/jev/). Rate on
+# a GPU (src/colab.sh <command> --exp murrayhill_jev; docs/colab.md).
+inherit: murrayhill_qwen3.yaml
+
+inference: jev           # configs/inference/jev.yaml

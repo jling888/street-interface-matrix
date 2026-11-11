@@ -1,0 +1,672 @@
+# The VLM's prompts (step rate_views_with_vlm). Loaded as cfg["vlm"]["prompts"] and checked on load
+# (common/settings_and_paths.py, load_prompts). Three sets, all rated on every view:
+#   - the earlier terms (v_nat ... business_spill_out): the earlier framework's prompts, kept so the two frameworks can
+#     be compared; GFAPI's top rung no longer names activity inside. They also serve as readings of records: v_nat of
+#     greenery, v_pave of sidewalk sheds, enclosure of building height.
+#   - perception terms (distinctiveness ... pause_invitation): felt qualities with no record behind them; they enter M.
+#   - agreement terms (setback_space ... transit_entrance): the VLM's reading of a physical attribute step
+#     measure_city_records measures; step validate_vlm_ratings compares the two, and the metric (compose_metric) takes
+#     the rating or the record as configured.
+# Each new term names its research basis above it.
+#
+# Changing a prompt changes the fingerprint in data/<city>/inference/vlm/<model setup>/view-ratings-rated-with.json:
+# a table rated with other prompts is not resumed, so delete it to rate again.
+#
+# A term: view (along: the 180-degree view; facade: the two level frames square to the frontage), sides (facade only:
+# mean, or max where one good side is enough), definition, check, seven rungs in `scale`, and optionally cannot_judge
+# (facade only: adds a rung 0; a side the model cannot judge is left out, and the metric takes a view with neither from
+# its street's mean). The code numbers the rungs. The rating is the expected rung over 1-7 either way.
+#
+# How to write one, from the earlier runs:
+# - One subject per prompt; a schema of many fields made the model write one number into every slot.
+# - Name all seven rungs, and fit them to what streets show: a rung nobody reaches narrows the rating. Say what can be
+#   seen, not degrees, metres of height or H/W, which the model cannot measure.
+# - Keep what is not counted short: vision-language models read past negation, and telling the model to ignore the
+#   camera mast in the image moved unrelated ratings. So the image's blurred mask and watermarks go unmentioned.
+# - No persona and no reasoning steps: neither has been shown to help, and the answer starts at the rung.
+
+system: >-
+  You rate one quality of a street from a photo, following the definition and the scale you are given. You
+  answer with the JSON object asked for and nothing else.
+
+# the prompt's first sentence: what the image is
+view_sentences:
+  along: >-
+    The image is a 180-degree view along a street, taken at eye level from the roadway: the sidewalks
+    and buildings are at the left and right, and the street runs away in the centre.
+  facade: >-
+    The image is a 90-degree view at eye level facing one side of a street, taken from the roadway,
+    square to its buildings: their ground floors and the sidewalk in front of them.
+
+# what every prompt says before its scale ({view} is the sentence above), and what ends it (JSON braces doubled).
+# choose_rung and choose_option are the last words in the two formats: the rungs, or JEV's options A-G
+instructions: |-
+  {view}
+
+  {definition}
+
+  {check} {choose}
+choose_rung: "Judge only this quality, and choose the rung of the scale below that fits best."
+choose_option: "Judge only this quality, and choose the option that fits best."
+scale_and_reply: |-
+  Scale:
+  {scale}
+
+  Reply with ONE JSON object and nothing else: {{"{field}": <{lowest}-7>}}
+
+terms:
+  # ============================================================ the earlier terms (paper_revised)
+  # --- Place Imageability (nat_built = V_nat / V_built, GVI_eye, GMI)
+  # Was: 74% of views on rung 2, "a sixth of the view or less", though the model read cover well (rung 2 measured 11%,
+  # rung 3 27%). Measured vegetation is 2.5-15% on most views, so the rungs now resolve small shares.
+  v_nat:
+    view: along
+    definition: >-
+      Natural elements above ground (V_nat): how much of the whole view is living vegetation rising above the
+      ground: tree leaves and branches, green walls, climbing plants, planters, window boxes and hedges. Lawns,
+      turf and weeds in the paving are not counted.
+    check: >-
+      Judge how much of the whole image the vegetation covers, overhead canopy included.
+    scale:
+      - "no living vegetation above the ground anywhere in view"
+      - "a trace: one or two small plants or a sparse tree"
+      - "about a tenth of the view"
+      - "about a fifth of the view"
+      - "about a third of the view"
+      - "about half of the view"
+      - "most of the view"
+
+  # The earlier rungs. Rungs fitted to the measured shares did worse in the 200-view pilot (82% of views on one rung, up
+  # from 64%): the model reads walls as most of the view whatever the scale. It feeds only nat_built, which held
+  # (segmented ratio 0.75, up from 0.70, either way).
+  v_built:
+    view: along
+    definition: >-
+      Built elements above ground (V_built): how much of the whole view is taken by the vertical structures
+      bounding the street: building facades, storefronts, columns, walls and overhead cantilevers. Roadway,
+      sidewalks, curbs and other ground surfaces are not counted.
+    check: >-
+      Judge how much of the whole image those vertical structures cover.
+    scale:
+      - "no building or wall anywhere in view"
+      - "a trace: built structures cover about a sixth of the view or less"
+      - "built structures cover about a third of the view"
+      - "built structures cover about half of the view"
+      - "built structures cover about two thirds of the view"
+      - "built structures cover nearly all of the view"
+      - "built structures fill the whole view"
+
+  # Was: 65% of views on rung 2, and a band defined in degrees. The earlier final terms' wording spread further (44% on
+  # the most common rung) and followed the segmented eye band better (0.70 vs 0.65).
+  gvi_eye:
+    view: along
+    definition: >-
+      Foveal green view (GVI_eye): how much living greenery a pedestrian sees at eye level, from the sidewalk up
+      to about the first floor: street-tree trunks and lower branches, planters, shrubs, window boxes and climbing
+      plants. A bare tree counts, but less than one in leaf. High canopy seen only by looking up counts little.
+    check: >-
+      Look along the band from the sidewalk to about the first floor and judge how much of the street it fills.
+    scale:
+      - "no greenery at eye level"
+      - "a trace: one small tree or planter"
+      - "trees or planters along a small part of the street"
+      - "greenery along about half of the street"
+      - "greenery along most of the street"
+      - "greenery along nearly all of the street"
+      - "greenery frames the whole eye-level view"
+
+  # Was: 94% of views on rungs 1-2, whose wording was a share of the facades. Now by extent along the street, as for
+  # GVI_eye, and with a rung for the common case of one tree or planter.
+  gmi:
+    view: along
+    definition: >-
+      Green mitigation (GMI): how far greenery softens the building walls: how much of the lower floor of the
+      facades has plants growing on it or standing in front of it.
+    check: >-
+      Look at the walls from the sidewalk to about the first floor and judge how much of their length is softened
+      by greenery.
+    scale:
+      - "no greenery against or in front of the walls"
+      - "one tree, planter or window box against a wall"
+      - "greenery in front of the walls along a small part of the street"
+      - "greenery in front of the walls along about half of the street"
+      - "greenery in front of the walls along most of the street"
+      - "greenery in front of the walls along nearly all of the street"
+      - "green walls or dense planting cover the lower walls along the whole street"
+
+  # --- Place Identity (V_sign, canyon openness = 1 - enclosure, GFAPI)
+  # Was: 82% of views on rung 6, "the sky a narrow band". In these views the nearest walls leave the top of the image on
+  # 5-storey and 30-storey streets alike and the sky is a wedge in the centre, so that fits nearly all of them. The
+  # rungs now use what does differ: how far along the street the rooflines show, and how many storeys are in view.
+  # The largest change here, and untested: keep it only if it spreads and still follows H/W (was 0.60).
+  enclosure:
+    view: along
+    definition: >-
+      Perceived enclosure: how enclosed the street feels to someone looking along it, from the height
+      of its walls and how much sky stays open. The nearest walls usually run off the top of the image, so judge
+      the height from the walls further along the street.
+    check: >-
+      Look at the walls down the street: how many storeys do they show, how far along the street do their rooflines
+      come into view, and how wide is the sky in the centre?
+    scale:
+      - "open: no building walls, the sky across the whole view"
+      - "low or scattered buildings far apart, wide open sky"
+      - "low walls of up to about 3 storeys, rooflines in view along nearly the whole street, a wide sky"
+      - "walls of about 4 to 6 storeys, rooflines in view beyond the nearest buildings, a broad wedge of sky"
+      - "walls of about 7 to 12 storeys, rooflines in view only part way along the street, a narrowing wedge of sky"
+      - "tall walls of many storeys, rooflines in view only far along the street, a narrow wedge of sky"
+      - "towers on both sides, no rooflines in view except in the far distance, the sky only a slit"
+
+  # Spread well and carries architecture (building age -0.46, landmarks 0.24), so its substance is unchanged. The
+  # earlier
+  # final set's rewording, on the facade frames, lost that. Billboards added to what is not counted.
+  v_sign:
+    view: along
+    definition: >-
+      Legibility landmarks (V_sign): the density and articulation of the visual anchors that give the corridor its
+      own identity: detailed historic masonry carvings, decorative iron railings, recessed window divisions and
+      legible ground-level commercial signage. Billboards and advertising on scaffolding are not counted.
+    check: >-
+      Catalogue the ornaments, material textures, railings, window divisions and signs, and judge how dense they are
+      along the frontage.
+    scale:
+      - "none: plain, blank frontage without ornament, railings or signs"
+      - "one or two minor anchors, such as a plain sign or a simple cornice"
+      - "a few scattered anchors along the frontage"
+      - "anchors along about half of the frontage"
+      - "frequent carvings, railings, window detail or signage"
+      - "dense carvings, railings, window detail and signage"
+      - "rich, continuous architectural detail and legible signage throughout"
+
+  # Was: rung 2 never chosen, 61% on rung 3. The final set's extent rungs on the facade frames used rungs 1-5 evenly,
+  # each
+  # with more segmented openings than the last (6% to 11%), and followed cafes better (0.38 vs 0.34). In the pilot, rung
+  # 0
+  # worded "hidden by a vehicle or scaffolding" took 22-27% of sides, mostly construction hoardings: those are closed to
+  # a pedestrian, a real low score, so they are named here and rung 0 is only for a vehicle in the way. Likewise below.
+  gfapi:
+    view: facade
+    sides: mean
+    definition: >-
+      Ground-floor active permeability (GFAPI): how much of the ground floor is open to the street: shop windows you
+      can see into, open doors, and cafes and businesses that are trading. Shuttered, vacant or papered-over shops,
+      tinted or mirrored lobby glass, blank walls, garage doors, service doors, construction fences and hoardings count
+      as closed, and so does a side with no building; front doors and stoops of homes count as partly open. Behind a
+      sidewalk shed, judge the ground floor you can see.
+    check: >-
+      Go along the ground floor unit by unit and judge how much of its length is open and active.
+    cannot_judge: "a vehicle in the roadway fills the photo, so the ground floor cannot be seen"
+    scale:
+      - "closed throughout: blank walls, shutters, vacant units or service doors"
+      - "one open front in an otherwise closed ground floor"
+      - "open fronts along a small part of the ground floor"
+      - "open fronts along about half of the ground floor"
+      - "open fronts along most of the ground floor"
+      - "open fronts along nearly all of the ground floor, with frequent entrances"
+      - "continuous open, trading shopfronts along the whole ground floor"
+
+  # --- Place Dependence (V_pave, IAS, business spill-out)
+  # Was fine (active shed permits -0.44), but the final set's wording tracked permits better (-0.50): the share of views
+  # with a shed runs from 100% on rung 2 to 18% on rung 7. Metal grates dropped: they can be walked on.
+  v_pave:
+    view: along
+    definition: >-
+      Sidewalk walkability (V_pave): how much of the sidewalks' walking path is continuous and unobstructed. Things
+      standing in the path count against it: scaffolding and sidewalk sheds, construction fences, trash piles, bins and
+      delivery carts. A narrow but clear sidewalk is clear.
+    check: >-
+      Follow the sidewalks along the view and judge how much of their length is clear to walk.
+    scale:
+      - "blocked throughout"
+      - "clear only in one short stretch"
+      - "clear along a small part of the sidewalk"
+      - "clear along about half of the sidewalk"
+      - "clear along most of the sidewalk"
+      - "clear along nearly all of the sidewalk"
+      - "completely clear throughout"
+
+  # Was: followed low-rise blocks (enclosure -0.55) more than seats (0.35), and left out public benches. The final set's
+  # version on the facade frames was less tied to enclosure (-0.25) and read real stoops and plaza steps, but also
+  # a traffic barrier, and the records' benches were behind buses and trucks: hence the last sentence and rung 0. In the
+  # pilot it followed seats far better (0.54 vs 0.37) and left enclosure behind (-0.07 vs -0.53).
+  ias:
+    view: facade
+    sides: mean
+    definition: >-
+      Interface affordance (IAS): the density and quality of places anyone may sit for free: historic masonry stoops
+      and front steps; flat seat-height ledges, low walls and planter edges; plaza steps; and public benches. Cafe and
+      restaurant seats are not counted. Anything blocked by spikes, railings, gates, construction fences or hoardings,
+      or out of reach from the sidewalk, such as a traffic barrier, counts as nothing.
+    check: >-
+      For each candidate, judge whether a passer-by could reach it from the sidewalk and sit on it.
+    cannot_judge: "a vehicle in the roadway fills the photo, so the frontage cannot be seen"
+    scale:
+      - "nothing usable to sit on, or every candidate is blocked"
+      - "one usable place to sit"
+      - "a few usable places along a small part of the frontage"
+      - "usable places along about half of the frontage"
+      - "usable places along most of the frontage"
+      - "usable places along nearly all of the frontage"
+      - "continuous usable places along the whole frontage"
+
+  # From the final set: sidewalk cafes 0.34, and commercial seating is what Mehta finds people linger at. City benches
+  # now belong to IAS alone.
+  business_spill_out:
+    view: facade
+    sides: max
+    definition: >-
+      Business spill-out: how far the businesses extend onto the sidewalk: cafe and restaurant seating, roadside dining
+      structures, goods and produce displays, sandwich boards, and planters or benches set out by a shop. Only what a
+      business set out to serve or attract people counts: not trash bags, bins, delivery carts, construction material,
+      parked bicycles or city benches. Behind a construction fence or hoarding there is nothing set out.
+    check: >-
+      Look at the strip of sidewalk along the buildings and at the curb, and judge how much of the frontage has
+      something a business set out.
+    cannot_judge: "a vehicle in the roadway fills the photo, so the frontage cannot be seen"
+    scale:
+      - "nothing set out by a business"
+      - "one small item, such as a single sign board or planter"
+      - "items set out along a small part of the frontage"
+      - "items set out along about half of the frontage"
+      - "items set out along most of the frontage"
+      - "seating or displays along nearly all of the frontage"
+      - "continuous cafe seating or displays along the whole frontage"
+
+  # ============================================================ perception terms: image readings (reflect M)
+
+  # Lynch (1960, p. 9): imageability is the quality that evokes a "vividly identified" image; identity is its first
+  # component. Ewing et al. (2005): imageability, "distinct, recognizable, and memorable", expert ICC .49, lay .86.
+  # Risk: famous-street priors. Checked against landmarks, building age mix and cultural anchors.
+  distinctiveness:
+    view: along
+    definition: >-
+      Distinctiveness: how recognisable and memorable this stretch of street is as a place of its own, so that someone
+      who walked it once could picture it again and tell it apart from other streets.
+    check: >-
+      Judge what in the view would stay in memory: its buildings, their details, the street's shape and what lines it.
+    scale:
+      - "could be any street anywhere: nothing to remember it by"
+      - "one minor feature sets it apart, otherwise generic"
+      - "a few features set it apart, but it mostly looks like many other streets"
+      - "a clear character in parts, generic in others"
+      - "a clear character along most of the street"
+      - "a strong character that is easy to picture again"
+      - "unmistakable: a place no one would confuse with another"
+
+  # Ewing et al. (2005) complexity: "the visual richness of a place", expert ICC .51, lay .78; Ewing & Handy (2009).
+  # Their version counts people; this one does not. Checked against segmented class variety and buildings per length.
+  visual_richness:
+    view: along
+    definition: >-
+      Visual richness: how much there is to look at in the buildings and the street: variety of facades, materials,
+      windows, doors, ornament, signs, colours and street objects.
+    check: >-
+      Imagine walking along the sidewalk and judge how often something new would catch the eye.
+    scale:
+      - "nothing to look at: blank, uniform surfaces throughout"
+      - "very little: long stretches of the same surface"
+      - "some variety, in a few places"
+      - "a moderate mix of facades and details"
+      - "much to look at along most of the street"
+      - "rich detail and variety nearly everywhere"
+      - "something new to look at with every few steps"
+
+  # Ewing et al. (2005) human scale: the top walkability predictor (t 5.81), expert ICC .51, lay .49; Gehl, "human
+  # scale" under enjoyment. Checked against building height and grain (expected: falls with height, rises with grain).
+  human_scale:
+    view: along
+    definition: >-
+      Human scale: how far the size, proportion and detail of the buildings and street objects match a person on
+      foot, especially at the ground floor and the first few storeys.
+    check: >-
+      Judge the ground floors and lower storeys: their doors, windows, cornices, steps and street objects, against the
+      size of a person walking past.
+    scale:
+      - "built for vehicles and towers: nothing near the size of a person"
+      - "mostly oversized, with one or two elements at a person's size"
+      - "large blank or uniform walls, with some elements at a person's size"
+      - "a mix of person-sized and oversized elements"
+      - "mostly person-sized at street level, larger above"
+      - "person-sized doors, windows and details nearly everywhere"
+      - "everything at street level sized to a person on foot"
+
+  # Ewing et al. (2005) enclosure: "streets and other public spaces are visually defined", expert ICC .58, lay .03;
+  # Lynch's closure; Alexander, positive outdoor space. The felt quality, separate from building_height. Expected an
+  # inverted U against H/W, which the project's level photos may flatten above about 4-6 storeys.
+  outdoor_room:
+    view: along
+    definition: >-
+      Outdoor room: how far the street feels like a defined, comfortable outdoor room, held by its walls and trees,
+      neither exposed and undefined nor oppressively closed in.
+    check: >-
+      Judge the street as a space: how well its edges hold it, and whether it feels open, held or oppressive.
+    scale:
+      - "no defined space: open lots, gaps and roadway, nothing holds it"
+      - "weakly defined: edges broken by gaps and open lots"
+      - "partly defined, or so tall and close that it feels oppressive"
+      - "defined, but either loose or somewhat heavy"
+      - "a clearly held space on most of its length"
+      - "a well-proportioned room, held on both sides"
+      - "a fully held, comfortable outdoor room throughout"
+
+  # ============================================================ perception terms: felt features (form M)
+
+  # Ewing et al. (2005) transparency: lay ICC .71; Ewing et al. (2016): windows and active uses among the 3 of 20
+  # features tied to NYC footfall; Gehl, "interesting facades". The felt counterpart of shopfronts. Checked against
+  # segmented openings, storefront and vacancy filings, cafes.
+  frontage_engagement:
+    view: facade
+    sides: mean
+    definition: >-
+      Frontage engagement: how much the ground floor draws a passer-by in: windows to look into, open doors, displays
+      and entrances, as opposed to walls that give nothing back to the street.
+    check: >-
+      Go along the ground floor and judge how often it would invite someone to look in or step in.
+    cannot_judge: "a vehicle in the roadway fills the photo, so the ground floor cannot be seen"
+    scale:
+      - "gives nothing back: blank walls, shutters, hoardings or service doors"
+      - "one place to look in, otherwise closed"
+      - "a few places to look in along a small part"
+      - "inviting along about half of the ground floor"
+      - "inviting along most of the ground floor"
+      - "inviting nearly all along, with frequent entrances"
+      - "draws you to look in or step in at every step"
+
+  # Mehta (2006): fewer than 10% of 13,000 users stayed in open sidewalk away from objects; walls, steps, planters
+  # were sat or leaned on. Whyte (1980): sittable space. Gehl: opportunities to sit. Replaces IAS. Checked against
+  # segmented stoops, steps and ledges (not city benches, which public_seating checks).
+  sittability:
+    view: facade
+    sides: max
+    definition: >-
+      Sittability: how many places a person could sit or lean on at the edge of the sidewalk, formal or not: steps,
+      stoops, ledges, low walls, planter edges, benches and plaza steps, if reachable from the sidewalk.
+    check: >-
+      Judge the edge between the sidewalk and the buildings, and the curb side, for places a body could rest.
+    cannot_judge: "a vehicle in the roadway fills the photo, so the frontage cannot be seen"
+    scale:
+      - "nowhere a body could rest"
+      - "one place to sit or lean"
+      - "a few places along a small part of the frontage"
+      - "places to sit or lean along about half of the frontage"
+      - "places to sit or lean along most of the frontage"
+      - "steps, ledges or benches nearly all along"
+      - "continuous places to sit or lean along the whole frontage"
+
+  # Gehl's quality criteria: protection against traffic, and "attractive and functional edges"; the edge effect of
+  # staying with a wall at one's back. Checked against sidewalk width, curb-to-facade ground and segmented vehicles.
+  protected_edge:
+    view: along
+    definition: >-
+      Protected edge: how sheltered the sidewalk edge by the buildings feels from the traffic and the open street:
+      buffered by trees, parked cars, planters or a wide sidewalk, with a wall, recess or awning behind.
+    check: >-
+      Judge the strip along the buildings: how far it is from moving traffic and what stands between them.
+    scale:
+      - "fully exposed: traffic right beside a narrow sidewalk, nothing between"
+      - "barely buffered: a thin strip with little between it and traffic"
+      - "some buffer in places"
+      - "moderately sheltered along about half of the street"
+      - "sheltered along most of the street"
+      - "well buffered and backed by walls or recesses nearly all along"
+      - "a calm, sheltered edge throughout, set well apart from traffic"
+
+  # Gehl's quality criteria: opportunities to stop and stay, "defined spots for staying; objects to lean against or
+  # stand next to". The perception closest to staying, and the weakest term: no reliability data found, and an
+  # appraisal that may carry model priors. Checked against POPS and plaza known groups.
+  pause_invitation:
+    view: along
+    definition: >-
+      Pause invitation: how far the street offers places where it would feel natural to stop for a while, rather than
+      only to pass through: corners, recesses, forecourts, plazas, edges and spots out of the way of the walking path.
+    check: >-
+      Judge the sidewalks and the spaces beside them for spots where stopping would feel natural.
+    scale:
+      - "a corridor only for passing through, nowhere to stop"
+      - "one spot where stopping would feel natural"
+      - "a few such spots along a small part"
+      - "spots to stop along about half of the street"
+      - "spots to stop along most of the street"
+      - "inviting spots to stop nearly all along"
+      - "a place made for stopping, with spots to pause throughout"
+
+  # ============================================================ agreement terms: the VLM's reading of each record
+
+  # Record: setback beyond the sidewalk and curb-to-facade ground (planimetric sidewalks + footprints). Ewing's street
+  # wall rule (set back over 10 ft breaks it); Whyte, the street edge of plazas; the draft's setback and POPS claims.
+  setback_space:
+    view: along
+    definition: >-
+      Setback space: how much open ground lies between the sidewalk and the building fronts: forecourts, plazas,
+      front gardens, areaways and recessed entrances. The sidewalk itself is not counted.
+    check: >-
+      Look where the buildings meet the sidewalk and judge how far they stand back from it, and along how much of the
+      street.
+    scale:
+      - "buildings stand right at the sidewalk throughout"
+      - "one small recess or areaway"
+      - "small setbacks along a small part of the street"
+      - "setbacks along about half of the street"
+      - "setbacks along most of the street"
+      - "deep setbacks or forecourts along much of the street"
+      - "a plaza or open forecourt beside the sidewalk"
+
+  # Record: planimetric sidewalk width. Mehta (2006): width significant per segment (.03); Gehl, room for walking.
+  sidewalk_width:
+    view: along
+    definition: >-
+      Sidewalk width: how wide the sidewalks are, judged by how many people could walk side by side on them.
+    check: >-
+      Judge the sidewalks on both sides against the size of a person, or of a parked car beside them.
+    scale:
+      - "no sidewalk"
+      - "barely room for one person"
+      - "room for two people side by side"
+      - "room for three side by side"
+      - "room for four or five side by side"
+      - "very wide, room for a crowd"
+      - "plaza-like, wider than the roadway"
+
+  # Record: share of rays meeting a facade within 10 ft of the sidewalk (footprints). Ewing et al. (2005) street wall
+  # (team ICC .94, enclosure coefficients .72 and .94).
+  street_wall_continuity:
+    view: along
+    definition: >-
+      Street wall continuity: how unbroken the line of building fronts is along the sidewalks, without gaps, open lots,
+      parking or buildings set far back.
+    check: >-
+      Follow the building fronts on both sides and judge how much of their length is an unbroken wall at the sidewalk.
+    scale:
+      - "no building line: open lots, parking or gaps throughout"
+      - "a short stretch of wall, otherwise open"
+      - "walls along a small part, with many gaps"
+      - "walls along about half, with gaps"
+      - "walls along most of the street, a few gaps"
+      - "a nearly unbroken wall on both sides"
+      - "a fully continuous wall on both sides"
+
+  # Record: buildings fronting the node (footprints). Harvey (2015) building count, perceived safety; Ewing et al.
+  # (2005) number of buildings under complexity; Jacobs' small grain.
+  building_grain:
+    view: along
+    definition: >-
+      Building grain: how many separate buildings line the street in view, from one large building filling the
+      frontage to many narrow buildings side by side.
+    check: >-
+      Count the separate buildings you can tell apart on each side, roughly, and judge how fine the grain is.
+    scale:
+      - "one building fills the whole frontage"
+      - "two or three large buildings"
+      - "a few buildings, mostly wide"
+      - "several buildings of mixed width"
+      - "many buildings, mostly narrow"
+      - "a long row of narrow buildings"
+      - "a new building every few steps along both sides"
+
+  # Record: median construction year and landmark buildings (footprints, LPC). Ewing manual: historic frontage, the
+  # largest imageability multiplier (.97). Splits the heritage part of the old V_sign (building age -0.48).
+  historic_character:
+    view: along
+    definition: >-
+      Historic character: how much of the frontage reads as older, pre-war building: masonry, cornices, carved and
+      cast ornament, stoops, iron railings and divided windows, rather than modern glass and panel facades.
+    check: >-
+      Go along the facades and judge how much of their length looks pre-war.
+    scale:
+      - "nothing looks pre-war"
+      - "one older building among modern ones"
+      - "older buildings along a small part"
+      - "older buildings along about half"
+      - "older buildings along most of the street"
+      - "pre-war fabric nearly all along"
+      - "a wholly historic street, rich in original detail"
+
+  # Record: street trees within 20 m (Forestry Tree Points). Ewing et al. (2005): trees, team ICC .80; Mehta (2006):
+  # shade 63% vs 22% of frontage between the liveliest and least lively segments.
+  street_trees:
+    view: along
+    definition: >-
+      Street trees: how many trees stand along the sidewalks, from none to an unbroken row on both sides. A bare tree
+      counts.
+    check: >-
+      Follow the curbs on both sides and judge how closely the trees are spaced.
+    scale:
+      - "no street trees"
+      - "one tree"
+      - "a few trees, far apart"
+      - "trees along about half of the street"
+      - "trees along most of the street"
+      - "a regular row of trees on both sides"
+      - "an unbroken row of trees on both sides"
+
+  # Record: city benches and seating within 20 m (NYC DOT). Mehta (2006): public seating, coefficient .206.
+  public_seating:
+    view: facade
+    sides: max
+    definition: >-
+      Public seating: benches and seats set out for anyone to use for free, such as city benches, seats in a plaza or
+      at a bus stop. Cafe and restaurant seats, steps and ledges are not counted.
+    check: >-
+      Look along the sidewalk, the curb and any plaza for public benches or seats.
+    cannot_judge: "a vehicle in the roadway fills the photo, so the sidewalk cannot be seen"
+    scale:
+      - "no public seating"
+      - "one bench or seat"
+      - "two or three benches or seats"
+      - "a few benches along part of the frontage"
+      - "benches along much of the frontage"
+      - "many public seats along the frontage"
+      - "a seating area or plaza full of public seats"
+
+  # Record: sidewalk cafes approved for seating within 20 m (Open Restaurants). Mehta (2006): commercial seating, the
+  # strongest predictor (r .78). Seated patrons are not the subject: the furniture is.
+  cafe_seating:
+    view: facade
+    sides: max
+    definition: >-
+      Cafe seating: tables and chairs set out by cafes and restaurants on the sidewalk or in roadside dining
+      structures, whether in use or not.
+    check: >-
+      Look along the sidewalk and the curb for tables and chairs set out by a business.
+    cannot_judge: "a vehicle in the roadway fills the photo, so the sidewalk cannot be seen"
+    scale:
+      - "no cafe tables or chairs"
+      - "a single table or bench"
+      - "a few tables in front of one business"
+      - "tables along about a quarter of the frontage"
+      - "tables along about half of the frontage"
+      - "tables along most of the frontage"
+      - "continuous cafe seating along the whole frontage"
+
+  # Record: storefront filings within 20 m (Local Law 157). Ewing et al. (2016): active uses tied to NYC footfall;
+  # Mehta (2006): permeability r .47. The countable side of the old GFAPI.
+  shopfronts:
+    view: facade
+    sides: mean
+    definition: >-
+      Shopfronts: how much of the ground floor is made of shop, cafe and restaurant fronts, open or closed, as opposed
+      to lobbies, homes, blank walls and service doors.
+    check: >-
+      Go along the ground floor unit by unit and judge how much of its length is shopfronts.
+    cannot_judge: "a vehicle in the roadway fills the photo, so the ground floor cannot be seen"
+    scale:
+      - "no shopfronts"
+      - "one shopfront"
+      - "shopfronts along a small part"
+      - "shopfronts along about half"
+      - "shopfronts along most of the ground floor"
+      - "shopfronts nearly all along"
+      - "an unbroken row of shopfronts"
+
+  # Record: vacancy in the storefront filings (Local Law 157). Mehta (2006): "no dead space"; Healthy Streets'
+  # shutter cue. Hoardings and shutters at capture time also read as vacant: a known capture-moment confound.
+  vacant_shopfronts:
+    view: facade
+    sides: mean
+    definition: >-
+      Vacant shopfronts: how many of the shopfronts look empty or out of business: papered or whitewashed windows,
+      "for lease" signs, empty interiors, or permanently closed shutters.
+    check: >-
+      Judge each shopfront in turn and how many of them look vacant.
+    cannot_judge: "a vehicle in the roadway fills the photo, so the ground floor cannot be seen"
+    scale:
+      - "no shopfronts, or none look vacant"
+      - "one looks vacant"
+      - "a few look vacant"
+      - "about a quarter look vacant"
+      - "about half look vacant"
+      - "most look vacant"
+      - "every shopfront looks vacant"
+
+  # Record: distance to a park or DOT plaza, and POPS buildings within 20 m. Whyte (1980), Kayden (2000): plazas and
+  # small parks as places to stay; Ewing: courtyards, plazas and parks in imageability (.41).
+  open_space:
+    view: along
+    definition: >-
+      Open space: how much public open space is in view beside the street: parks, plazas, public forecourts and
+      landscaped open areas that people can enter.
+    check: >-
+      Look beside and between the buildings for open space people can walk into.
+    scale:
+      - "no open space in view"
+      - "a glimpse of open space far off"
+      - "a small open area at the edge of the view"
+      - "a small plaza or garden beside the street"
+      - "a plaza or park along part of the street"
+      - "a large plaza or park beside the street"
+      - "the street opens onto a park or plaza along its whole length"
+
+  # Record: public art (PDC inventory, DOT temporary art), landmark buildings and POPS within 20 m. Lynch's landmarks;
+  # Ewing: public art (.286, p .051) and landmarks not significant for imageability. Art alone reaches one node.
+  cultural_anchors:
+    view: along
+    definition: >-
+      Cultural anchors: civic and cultural features in view that mark the place: public art and sculpture, monuments
+      and plaques, landmark buildings, churches, museums and notable public spaces.
+    check: >-
+      Look for features in the view that mark this place culturally or civically.
+    scale:
+      - "none in view"
+      - "one minor feature, such as a plaque"
+      - "one notable feature"
+      - "a few notable features"
+      - "a prominent landmark or artwork"
+      - "several prominent landmarks or artworks"
+      - "the street is defined by its landmarks and art"
+
+  # Record: subway entrances within 20 m (MTA). Waiting is not staying (Cambridge 2021: 92% of lingerers at one block
+  # waited for a bus). Within 20 m of 1% of nodes, so its agreement test is weak.
+  transit_entrance:
+    view: along
+    definition: >-
+      Transit entrance: subway entrances and stairs, and bus shelters, on the sidewalks in view.
+    check: >-
+      Look along both sidewalks for subway stairs, entrance kiosks and bus shelters.
+    scale:
+      - "none in view"
+      - "one far off in the distance"
+      - "one in the middle distance"
+      - "one close by"
+      - "two or more in view"
+      - "an entrance right beside the camera"
+      - "several entrances close by, a transit hub"
