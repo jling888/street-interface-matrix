@@ -35,9 +35,9 @@ uv run python src/main.py configs/experiments/<experiment_config_name>.yaml
 uv run python src/main.py configs/experiments/<experiment_config_name>.yaml <stage_or_step>
 ```
 
-Review the nodes in the browser:
+Review the nodes in the browser ([`apps.md`](./apps.md) has this and the other apps):
 ```
-uv run streamlit run src/data_prep/node_review_app.py
+uv run streamlit run src/apps/node_review_app.py
 ```
 
 ## Stages and steps

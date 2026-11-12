@@ -20,6 +20,8 @@ The five stages, one folder each:
   metric/             a score from the ratings and the records: one folder per system (street_interface_matrix/)
   analysis/           the ratings checked, and what the score explains (any city, any metric system)
   common/             settings and paths, downloads, the readers of the files one stage writes for the next, styling
+  apps/               tools beside the pipeline, which never runs them: node review, rating validation, fast
+                      inference (docs/apps.md)
 An experiment picks one config per stage (and, for the public data and the metric, its code). Every step is one
 function of its settings (`cfg`) and its files (`paths`); the stages share files, never code: a stage imports only
 from common/. src/ is the import root: running this file puts it on the path.
