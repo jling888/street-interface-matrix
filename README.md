@@ -33,12 +33,12 @@ Each step fetches its sources the first time it runs and logs them in `data/<cit
 
 | Folder | Contents |
 |---|---|
-| `src/` | The code, one folder per stage (`data_prep`, `inference`, `public_data`, `metric`, `analysis`) and `common/` |
+| `src/` | The code, one folder per stage (`data_prep`, `inference`, `public_data`, `metric`, `analysis`), `common/`, and `apps/` (tools beside the pipeline) |
 | `configs/` | `experiments/` (one file per run) and one folder of configs per stage |
 | `data/<city>/` | What depends only on the city, shared by every experiment |
 | `outputs/<run_id>/` | The experiment's metric and analysis |
 | `tests/` | pytest |
-| `docs/` | Running the repo: [`pipeline.md`](docs/pipeline.md), [`colab.md`](docs/colab.md); the experiment's record: [`experiment-notes.md`](docs/experiment-notes.md) (why it works as it does, what was checked, the literature behind the rated terms) |
+| `docs/` | Running the repo: [`pipeline.md`](docs/pipeline.md), [`colab.md`](docs/colab.md), [`apps.md`](docs/apps.md); the experiment's record: [`experiment-notes.md`](docs/experiment-notes.md) (why it works as it does, what was checked, the literature behind the rated terms) |
 
 ## License
 
