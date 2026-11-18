@@ -45,17 +45,25 @@ Check the ratings of an experiment:
 uv run streamlit run src/apps/validation_app.py
 ```
 
-It answers one question: does each VLM rating follow what the photo shows? Choose the experiment, whether to count
-only usable nodes, and the street in the sidebar.
+It answers one question: does each VLM rating follow what the photo shows? Choose the experiment and whether to count
+only usable nodes in the sidebar, and `Walk` or `Terms` at the top.
 
-| Tab | Shows |
+| View | Shows |
 |---|---|
-| `Ratings check` | Every rated term in plain words: what it is checked against, how far the two agree, whether the rating repeats on the next view along the walk, how bunched it is, and a verdict. Hover over a column's header for what it means |
-| `Fast inference results` | A `fast_inference` output folder: each image's class shares, and its label map over it |
+| `Walk` | One street, view by view, as a pedestrian walks it: the 180-degree view, a strip of M along the walk, every rating grouped by the experiment's pillars beside what was measured for that view (in a box that scrolls, so M below stays in view), M and its pillars, and where the view sits among all views. Step with ◀ ▶ or the slider, `play` to walk on its own, or turn round with `Walking` |
+| `Terms` | Every rated term in plain words: what it is checked against, how far the two agree over all views, whether the rating repeats on the next view along the walk, how bunched it is, and a verdict. Hover over a column's header for what it means |
 
-Click a term in `Ratings check` to open it below the table: its definition and seven rungs, its rating against what it
-is checked against (a scatter, and the counterpart per rung), and the views where the two disagree most. Click one of
-those views to see it, the term's rung probabilities, and its node's four frames with their segmentation.
+On `Walk`, each rating has a line under it: what was measured for the same view (the segmented share over the view's
+arc, or the node's record) and whether the two agree, by how far apart they sit among all views (percentile ranks):
+`✓ agrees` under 0.25 apart, `⚠ disagrees` 0.5 or more, `~ apart` between. Terms nothing measures have no line;
+`Not in the score` lists the rated terms the experiment's metric does not use. The node's four frames with their
+segmentation are under the view, folded. M and its pillars come from the experiment's `compose_metric` step
+(`outputs/<experiment>/metric/`), so they differ between `murrayhill_qwen3_v1` and `murrayhill_qwen3_v2`; the ratings
+are the same for both.
+
+On `Terms`, tick a term at the left of its row to open it below the table: its definition and seven rungs, its rating
+against what it is checked against (a scatter, and the counterpart per rung), and the views where the two disagree
+most. Tick one of those views to walk to it: `Walk` opens on its street and direction, at that view.
 
 | Verdict | Agreement (Spearman's rho, turned so higher is better) |
 |---|---|
@@ -66,18 +74,26 @@ those views to see it, the term's rung probabilities, and its node's four frames
 | `(not repeatable)` | Correlates under 0.5 with the next view along the walk (`min_repeatability`) |
 
 The agreement thresholds are a reading, not a test; the other two are `validate_vlm_ratings`' own, in
-`configs/analysis/footfall_and_types.yaml`. Every figure follows the sidebar's choice of views.
+`configs/analysis/footfall_and_types.yaml`. The ratings, their marks on `Walk` and every figure on `Terms` follow the
+sidebar's choice of views; M's strip and where a view sits are among all the views the metric scored.
 
 | Data | Read from |
 |---|---|
 | Ratings, rung probabilities | `data/<city>/inference/vlm/<model>/view-ratings.csv` (`rate_views_with_vlm`) |
+| M and its pillars (`Walk`) | `outputs/<experiment>/metric/street_interface_matrix/scores-per-usable-view.csv` (`compose_metric`) |
 | Segmented share of each view | `data/<city>/inference/segmentation/<variant>/measurements/term-shares-by-bearing.npz` (`calculate_segmentation_pixel_shares`) and `data/<city>/data_prep/views-180.csv` |
 | Records, usable flag | Each node's measurements (`public_data` stage, `node-review-decisions.csv`), as the pipeline joins them |
 | Images, label maps | `data/<city>/data_prep/views-180/`, the Street View frames, and `.../segmentation/<variant>/label-maps/` |
 | Term names, definitions, rungs | `configs/inference/vlm_prompts.yaml` |
 
-It computes every figure from these, so it needs the pipeline up to `calculate_segmentation_pixel_shares` (and the
-`public_data` stage for the records), not `validate_vlm_ratings`.
+It computes every figure from these, so it needs the pipeline up to `calculate_segmentation_pixel_shares`, the
+`public_data` stage for the records, and `compose_metric` for M on `Walk`; not `validate_vlm_ratings`.
+
+To look at a `fast_inference` run instead, give its output folder:
+```
+uv run streamlit run src/apps/validation_app.py -- --output_path <image folder>-segmented
+```
+The page then shows each image's class shares, and its label map over it.
 
 ## Fast inference
 
